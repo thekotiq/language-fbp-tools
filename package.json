@@ -1,0 +1,56 @@
+{
+  "name": "language-fbp-tools",
+  "displayName": "FBP Language Tools",
+  "description": "Syntax highlighting and hover descriptions for Flow-Based Programming.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "publisher": "thekotiq",
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:fbp"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "fbp",
+        "aliases": [
+          "FBP"
+        ],
+        "extensions": [
+          ".fbp"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "fbp",
+        "scopeName": "source.fbp",
+        "path": "./syntaxes/fbp.tmLanguage"
+      }
+    ],
+    "hoverProvider": true
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p .",
+    "compile": "tsc -p .",
+    "watch": "tsc -watch -p ."
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.20.7",
+    "@types/node": "^22.15.18",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.27.4",
+    "@babel/traverse": "^7.27.4",
+    "@babel/types": "^7.27.3",
+    "@nsfx/utils": "^1.0.12"
+  }
+}
