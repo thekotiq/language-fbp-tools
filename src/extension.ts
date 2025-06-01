@@ -117,11 +117,28 @@ function extractComponentSummary(jsCode: string): {
 }
 
 function extractObjectExpression(node: any): ObjectExpression | null {
-  if (node?.type === 'ObjectExpression') return node;
+  if (node?.type === 'ObjectExpression') {
+    return node;
+  }
 
+  // Arrow function with implicit return
   if (node?.type === 'ArrowFunctionExpression') {
     if (node.body?.type === 'ObjectExpression') {
       return node.body;
+    }
+  }
+
+  // Arrow function or regular function with explicit return statement
+  if (
+    (node?.type === 'ArrowFunctionExpression' ||
+     node?.type === 'FunctionExpression' ||
+     node?.type === 'FunctionDeclaration') &&
+    node.body?.type === 'BlockStatement'
+  ) {
+    for (const stmt of node.body.body) {
+      if (stmt.type === 'ReturnStatement' && stmt.argument?.type === 'ObjectExpression') {
+        return stmt.argument;
+      }
     }
   }
 
@@ -156,20 +173,39 @@ function extractObjectKeysWithComments(objExpr: ObjectExpression, comments: any[
     });
 }
 
+function findPackageRoot(startPath: string): string | undefined {
+  let currentDir = startPath;
+  let lastFound: string | undefined = undefined;
+
+  while (true) {
+    const pkgPath = path.join(currentDir, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      lastFound = currentDir;  // remember the last found package.json folder
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) break; // reached root
+
+    currentDir = parentDir;
+  }
+
+  return lastFound;
+}
+
 function resolveComponentPath(proc_info: { component: string }, fbpFileUri: vscode.Uri): string | undefined {
   const fbpDir = path.dirname(fbpFileUri.fsPath);
-  const workspaceFolder = vscode.workspace.getWorkspaceFolder(fbpFileUri);
+  const packageRoot = findPackageRoot(fbpDir)
 
   if (proc_info.component.startsWith('./') || proc_info.component.startsWith('../')) {
     const resolved = path.resolve(fbpDir, `${proc_info.component}.node.js`);
     if (fs.existsSync(resolved)) return resolved;
   }
   
-  if (workspaceFolder) {
-    const absPath = path.resolve(workspaceFolder.uri.fsPath, `${proc_info.component}.node.js`);
+  if (packageRoot) {
+    const absPath = path.resolve(packageRoot, `${proc_info.component}.node.js`);
     if (fs.existsSync(absPath)) return absPath;
 
-    const nodeModulesPath = path.resolve(workspaceFolder.uri.fsPath, 'node_modules', `${proc_info.component}.node.js`);
+    const nodeModulesPath = path.resolve(packageRoot, 'node_modules', `${proc_info.component}.node.js`);
     if (fs.existsSync(nodeModulesPath)) return nodeModulesPath;
   }
 
@@ -198,7 +234,6 @@ function getProcessDescription(document: vscode.TextDocument, name: String): vsc
     const component_content: string = fs.readFileSync(component_file).toString()
     const { props, inports, outports } = extractComponentSummary(component_content)
     
-    // const { inports, outports } = loadComponent(component_file)
     const markdown = new vscode.MarkdownString(`**${name}**\n\n*${proc_info.component}*\n\n`);
 
     markdown.appendMarkdown('**Props**\n\n')
@@ -232,7 +267,6 @@ function getProcessDescription(document: vscode.TextDocument, name: String): vsc
   } catch (err: any) {
     console.error('Failed to load module:', err);
     return new vscode.Hover(`Error loading ${component_file}\n\n${err.message}`);
-    // return `Error loading ${component_file}: ${err.message}`
   }
 }
 

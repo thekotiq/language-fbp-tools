@@ -2,7 +2,7 @@
   "name": "language-fbp-tools",
   "displayName": "FBP Language Tools",
   "description": "Syntax highlighting and hover descriptions for Flow-Based Programming.",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.85.0"
   },
