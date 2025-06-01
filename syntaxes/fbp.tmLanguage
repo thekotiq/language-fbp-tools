@@ -6,10 +6,48 @@
 	<array>
 		<string>fbp</string>
 	</array>
+
 	<key>name</key>
 	<string>FBP</string>
+
+	<key>injectionSelector</key>
+	<string>L:source.js -comment -string -text</string>
+	
 	<key>patterns</key>
 	<array>
+		<!-- Injected block for `/* fbp */` -->
+		<dict>
+			<key>name</key>
+			<string>fbp.embedded.block</string>
+			<key>begin</key>
+			<string>`(?=\s*#\s*fbp\b)</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>punctuation.definition.string.begin.js</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>`</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>0</key>
+				<dict>
+					<key>name</key>
+					<string>punctuation.definition.string.end.js</string>
+				</dict>
+			</dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>source.fbp</string>
+				</dict>
+			</array>
+		</dict>
+		
 		<dict>
 			<key>include</key>
 			<string>#comment</string>
