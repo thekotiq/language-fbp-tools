@@ -156,22 +156,32 @@ function extractObjectKeysWithComments(objExpr: ObjectExpression, comments: any[
     });
 }
 
-function resolveComponent(proc_info: any) {
-  const workspace_folder = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-  if (workspace_folder) {
-    return proc_info.component.startsWith('./') ||
-      proc_info.component.startsWith('../')
-      ? path.resolve(workspace_folder, `${proc_info.component}.node.js`)
-      : path.resolve(workspace_folder, 'node_modules', `${proc_info.component}.node.js`)
+function resolveComponentPath(proc_info: { component: string }, fbpFileUri: vscode.Uri): string | undefined {
+  const fbpDir = path.dirname(fbpFileUri.fsPath);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(fbpFileUri);
+
+  if (proc_info.component.startsWith('./') || proc_info.component.startsWith('../')) {
+    const resolved = path.resolve(fbpDir, `${proc_info.component}.node.js`);
+    if (fs.existsSync(resolved)) return resolved;
   }
+  
+  if (workspaceFolder) {
+    const absPath = path.resolve(workspaceFolder.uri.fsPath, `${proc_info.component}.node.js`);
+    if (fs.existsSync(absPath)) return absPath;
+
+    const nodeModulesPath = path.resolve(workspaceFolder.uri.fsPath, 'node_modules', `${proc_info.component}.node.js`);
+    if (fs.existsSync(nodeModulesPath)) return nodeModulesPath;
+  }
+
+  return undefined;
 }
 
-function getComponentFile(document: vscode.TextDocument, name: String): string | undefined {
+function getComponentPath(document: vscode.TextDocument, name: String): string | undefined {
   const def = document.getText()
   const parsed = parse(def)
   const proc_info = parsed.processes[name]
   
-  return resolveComponent(proc_info)
+  return resolveComponentPath(proc_info, document.uri)
 }
 
 function getProcessDescription(document: vscode.TextDocument, name: String): vscode.Hover {
@@ -179,7 +189,7 @@ function getProcessDescription(document: vscode.TextDocument, name: String): vsc
   const parsed = parse(def)
   const proc_info = parsed.processes[name]
   
-  const component_file = resolveComponent(proc_info)
+  const component_file = resolveComponentPath(proc_info, document.uri)
   if (!component_file) {
     return new vscode.Hover(`Error loading ${component_file}`);
   }
@@ -233,7 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
       const range = document.getWordRangeAtPosition(position, /[A-Za-z0-9_]+/);
       // if (!range) return;
       const word = document.getText(range);
-      const filePath = getComponentFile(document, word);
+      const filePath = getComponentPath(document, word);
       console.debug('provideDefinition', { document, position, range, word, filePath })
 
       if (filePath) {

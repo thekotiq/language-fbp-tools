@@ -2,11 +2,14 @@
   "name": "language-fbp-tools",
   "displayName": "FBP Language Tools",
   "description": "Syntax highlighting and hover descriptions for Flow-Based Programming.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.85.0"
   },
   "publisher": "thekotiq",
+  "repository": {
+    "url": "https://github.com/thekotiq/language-fbp-tools"
+  },
   "categories": [
     "Programming Languages"
   ],
