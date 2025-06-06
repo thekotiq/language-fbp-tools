@@ -192,7 +192,7 @@ function findPackageRoot(startPath: string): string | undefined {
   return lastFound;
 }
 
-function resolveComponentPath(proc_info: { component: string }, fbpFileUri: vscode.Uri): string | undefined {
+function resolveComponentPath(fbpFileUri: vscode.Uri, proc_info: { component: string }): string | undefined {
   const fbpDir = path.dirname(fbpFileUri.fsPath);
   const packageRoot = findPackageRoot(fbpDir)
 
@@ -200,7 +200,7 @@ function resolveComponentPath(proc_info: { component: string }, fbpFileUri: vsco
     const resolved = path.resolve(fbpDir, `${proc_info.component}.node.js`);
     if (fs.existsSync(resolved)) return resolved;
   }
-  
+
   if (packageRoot) {
     const absPath = path.resolve(packageRoot, `${proc_info.component}.node.js`);
     if (fs.existsSync(absPath)) return absPath;
@@ -212,20 +212,18 @@ function resolveComponentPath(proc_info: { component: string }, fbpFileUri: vsco
   return undefined;
 }
 
-function getComponentPath(document: vscode.TextDocument, name: String): string | undefined {
-  const def = document.getText()
-  const parsed = parse(def)
+function getComponentPath(documentUri: vscode.Uri, fbpContent: String, name: String): string | undefined {
+  const parsed = parse(fbpContent)
   const proc_info = parsed.processes[name]
   
-  return resolveComponentPath(proc_info, document.uri)
+  return resolveComponentPath(documentUri, proc_info)
 }
 
-function getProcessDescription(document: vscode.TextDocument, name: String): vscode.Hover {
-  const def = document.getText()
-  const parsed = parse(def)
+function getProcessDescription(documentUri: vscode.Uri, fbpContent: String, name: String): vscode.Hover {
+  const parsed = parse(fbpContent)
   const proc_info = parsed.processes[name]
   
-  const component_file = resolveComponentPath(proc_info, document.uri)
+  const component_file = resolveComponentPath(documentUri, proc_info)
   if (!component_file) {
     return new vscode.Hover(`Error loading ${component_file}`);
   }
@@ -272,13 +270,40 @@ function getProcessDescription(document: vscode.TextDocument, name: String): vsc
 
 export function activate(context: vscode.ExtensionContext) {
 
-  const defProvider = vscode.languages.registerDefinitionProvider('fbp', {
+  const defProvider = vscode.languages.registerDefinitionProvider([
+    'fbp',
+    'javascript',
+    'typescript',
+  ], {
     provideDefinition(document, position) {
-      const range = document.getWordRangeAtPosition(position, /[A-Za-z0-9_]+/);
-      // if (!range) return;
-      const word = document.getText(range);
-      const filePath = getComponentPath(document, word);
-      console.debug('provideDefinition', { document, position, range, word, filePath })
+      const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z0-9_]+/);
+      if (!wordRange) return;
+      
+      let filePath
+      const word = document.getText(wordRange);
+      const { languageId } = document;
+
+      if (languageId === 'fbp') {
+        filePath = getComponentPath(document.uri, document.getText(), word);
+        console.debug('provideDefinition', { document, position, wordRange, word, filePath })
+      }
+
+      // Case 2: .js files — only if inside `# fbp` template literal
+      if (['javascript', 'typescript'].includes(languageId)) {
+        const fullText = document.getText();
+        const cursorOffset = document.offsetAt(position);
+
+        const fbpBlocks = Array.from(fullText.matchAll(/`# fbp([\s\S]*?)`/g));
+        for (const match of fbpBlocks) {
+          const start = match.index;
+          const end = start + match[0].length;
+
+          if (cursorOffset >= start && cursorOffset <= end) {
+            const fbpContent = match[1].trimStart();
+            filePath = getComponentPath(document.uri, fbpContent, word)
+          }
+        }
+      }
 
       if (filePath) {
         return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(0, 0));
@@ -289,14 +314,48 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(defProvider);
 
-  const hoverProvider = vscode.languages.registerHoverProvider('fbp', {
+  const hoverProvider = vscode.languages.registerHoverProvider([
+    'fbp',
+    'javascript',
+    'typescript',
+  ], {
     provideHover(document, position, token) {
-      const range = document.getWordRangeAtPosition(position, /[a-z0-9_]+/);
-      const word = document.getText(range);
+      const wordRange = document.getWordRangeAtPosition(position, /[a-z0-9_]+/i);
+      if (!wordRange) return;
 
-      return getProcessDescription(document, word)
+      const word = document.getText(wordRange);
+      const { languageId } = document;
+
+      // Case 1: .fbp files — always allow
+      if (languageId === 'fbp') {
+        console.debug('provideHover (fbp)', { word });
+        return getProcessDescription(document.uri, document.getText(), word);
+      }
+
+      // Case 2: .js files — only if inside `# fbp` template literal
+      if (['javascript', 'typescript'].includes(languageId)) {
+        const fullText = document.getText();
+        const cursorOffset = document.offsetAt(position);
+
+        const fbpBlocks = Array.from(fullText.matchAll(/`# fbp([\s\S]*?)`/g));
+        for (const match of fbpBlocks) {
+          const start = match.index;
+          const end = start + match[0].length;
+
+          if (cursorOffset >= start && cursorOffset <= end) {
+            const fbpContent = match[1].trimStart(); // extract only the inner content
+            console.debug('provideHover (js/fbp virtual)', { word });
+            return getProcessDescription(document.uri, fbpContent, word);
+          }
+        }
+
+        return;
+      }
+
+      return;
     }
   });
+
   context.subscriptions.push(hoverProvider);
 }
 

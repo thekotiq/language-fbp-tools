@@ -1,0 +1,85 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "FBP",
+  "scopeName": "source.fbp",
+  "fileTypes": ["fbp"],
+  "patterns": [
+    {
+      "include": "#fbp-syntax"
+    }
+  ],
+  "repository": {
+    "fbp-syntax": {
+      "patterns": [
+        {
+          "comment": "Comments (standard scope)",
+          "name": "comment.line.number-sign.fbp",
+          "match": "#.*$"
+        },
+        {
+          "comment": "Process declarations (standard entity scopes)",
+          "name": "meta.definition.process.fbp",
+          "match": "([a-z][a-z0-9_]*)\\(([^)]+)\\)",
+          "captures": {
+            "1": { "name": "entity.name.function.fbp" },
+            "2": { "name": "string.quoted.other.fbp" }
+          }
+        },
+        {
+          "comment": "Standalone process references",
+          "name": "variable.other.process.fbp",
+          "match": "\\b[a-z][a-z0-9_]*\\b(?!\\s*\\()"
+        },
+        {
+          "comment": "Ports (standard constant scopes for ALL_CAPS)",
+          "name": "constant.other.port.fbp",
+          "match": "\\b[A-Z][A-Z0-9_]*\\b"
+        },
+        {
+          "comment": "Connection operator (standard operator scope)",
+          "name": "keyword.control.flow.fbp",
+          "match": "->"
+        },
+        {
+          "comment": "Connection patterns (standard semantic scopes)",
+          "name": "meta.connection.fbp",
+          "patterns": [
+            {
+              "comment": "Basic process-to-process",
+              "name": "meta.connection.basic.fbp",
+              "match": "([a-z][a-z0-9_]*)\\s*(->)\\s*([a-z][a-z0-9_]*)",
+              "captures": {
+                "1": { "name": "variable.other.process.source.fbp" },
+                "2": { "name": "keyword.control.flow.fbp" },
+                "3": { "name": "variable.other.process.destination.fbp" }
+              }
+            },
+            {
+              "comment": "With outport",
+              "name": "meta.connection.with-outport.fbp",
+              "match": "([a-z][a-z0-9_]*)\\s+([A-Z][A-Z0-9_]*)\\s*(->)\\s*([a-z][a-z0-9_]*)",
+              "captures": {
+                "1": { "name": "variable.other.process.source.fbp" },
+                "2": { "name": "constant.other.port.out.fbp" },
+                "3": { "name": "keyword.control.flow.fbp" },
+                "4": { "name": "variable.other.process.destination.fbp" }
+              }
+            },
+            {
+              "comment": "With both ports",
+              "name": "meta.connection.with-ports.fbp",
+              "match": "([a-z][a-z0-9_]*)\\s+([A-Z][A-Z0-9_]*)\\s*(->)\\s*([A-Z][A-Z0-9_]*)\\s+([a-z][a-z0-9_]*)",
+              "captures": {
+                "1": { "name": "variable.other.process.source.fbp" },
+                "2": { "name": "constant.other.port.out.fbp" },
+                "3": { "name": "keyword.control.flow.fbp" },
+                "4": { "name": "constant.other.port.in.fbp" },
+                "5": { "name": "variable.other.process.destination.fbp" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

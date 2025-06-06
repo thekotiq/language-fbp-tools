@@ -2,7 +2,7 @@
 
 The `Flow Based Programming` DSL language support with `props` and `ports` description for Visual Studio Code.
 
-![alt text](assets/intro.png)
+![alt text](assets/intro_0.1.6.png)
 
 Based on:
 - [LeuisKen/language-fbp](https://github.com/LeuisKen/language-fbp)

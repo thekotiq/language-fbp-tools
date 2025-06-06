@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "FBP (Embedded)",
+  "scopeName": "source.fbp.embedded",
+  "injectionSelector": "L:source.js -string -comment",
+  "patterns": [
+    {
+      "include": "#fbp-template-block"
+    }
+  ],
+  "repository": {
+    "fbp-template-block": {
+      "name": "meta.embedded.block.fbp",
+      "contentName": "source.fbp",
+      "begin": "(^|\\G)(\\s*)(`)(?=\\s*#\\s*fbp\\b)",
+      "end": "`",
+      "beginCaptures": {
+        "3": { "name": "punctuation.definition.string.begin.js" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.js" }
+      },
+      "patterns": [
+        {
+          "begin": "(?<=`)\\s*#\\s*fbp\\b",
+          "end": "(?=`)",
+          "patterns": [
+            {
+              "include": "source.fbp"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
