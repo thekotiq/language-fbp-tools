@@ -2,7 +2,7 @@
   "name": "language-fbp-tools",
   "displayName": "FBP Language Tools",
   "description": "Syntax highlighting and hover descriptions for Flow-Based Programming.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -36,7 +36,7 @@
       {
         "language": "fbp",
         "scopeName": "source.fbp",
-        "path": "./syntaxes/fbp.tmLanguage",
+        "path": "./syntaxes/fbp.tmLanguage.json",
         "injectTo": [
           "source.js",
           "source.ts"
