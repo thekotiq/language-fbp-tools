@@ -1,5 +1,0 @@
-{
-  "HttpRequest": "Sends an HTTP request and outputs the response.",
-  "Logger": "Logs messages to the console or file.",
-  "FileReader": "Reads contents from a file path provided as input."
-}
