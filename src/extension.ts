@@ -192,21 +192,44 @@ function findPackageRoot(startPath: string): string | undefined {
   return lastFound;
 }
 
+function resolveComponentCandidate(candidates: string[]): string | undefined {
+  const extensions = ['cjs', 'mjs', 'js'];
+  for (const base of candidates) {
+    for (const ext of extensions) {
+      const filePath = `${base}.${ext}`;
+
+      if (fs.existsSync(filePath)) {
+        return filePath;
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function resolveComponentPath(fbpFileUri: vscode.Uri, proc_info: { component: string }): string | undefined {
   const fbpDir = path.dirname(fbpFileUri.fsPath);
-  const packageRoot = findPackageRoot(fbpDir)
+  const packageRoot = findPackageRoot(fbpDir);
 
   if (proc_info.component.startsWith('./') || proc_info.component.startsWith('../')) {
-    const resolved = path.resolve(fbpDir, `${proc_info.component}.node.js`);
-    if (fs.existsSync(resolved)) return resolved;
+    const resolved = resolveComponentCandidate([
+      path.resolve(fbpDir, `${proc_info.component}.node`)
+    ]);
+
+    if (resolved) {
+      return resolved;
+    }
   }
 
   if (packageRoot) {
-    const absPath = path.resolve(packageRoot, `${proc_info.component}.node.js`);
-    if (fs.existsSync(absPath)) return absPath;
-
-    const nodeModulesPath = path.resolve(packageRoot, 'node_modules', `${proc_info.component}.node.js`);
-    if (fs.existsSync(nodeModulesPath)) return nodeModulesPath;
+    const resolved = resolveComponentCandidate([
+      path.resolve(packageRoot, `${proc_info.component}.node`),
+      path.resolve(packageRoot, 'node_modules', `${proc_info.component}.node`)
+    ]);
+    
+    if (resolved) {
+      return resolved;
+    }
   }
 
   return undefined;
@@ -293,7 +316,7 @@ export function activate(context: vscode.ExtensionContext) {
         const fullText = document.getText();
         const cursorOffset = document.offsetAt(position);
 
-        const fbpBlocks = Array.from(fullText.matchAll(/`# fbp([\s\S]*?)`/g));
+        const fbpBlocks = Array.from(fullText.matchAll(/`#\s*fbp([\s\S]*?)`/g));
         for (const match of fbpBlocks) {
           const start = match.index;
           const end = start + match[0].length;
@@ -337,7 +360,7 @@ export function activate(context: vscode.ExtensionContext) {
         const fullText = document.getText();
         const cursorOffset = document.offsetAt(position);
 
-        const fbpBlocks = Array.from(fullText.matchAll(/`# fbp([\s\S]*?)`/g));
+        const fbpBlocks = Array.from(fullText.matchAll(/`#\s*fbp([\s\S]*?)`/g));
         for (const match of fbpBlocks) {
           const start = match.index;
           const end = start + match[0].length;
