@@ -2,7 +2,7 @@
   "name": "language-fbp-tools",
   "displayName": "FBP Language Tools",
   "description": "Syntax highlighting and hover descriptions for Flow-Based Programming.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -43,6 +43,7 @@
     "hoverProvider": true
   },
   "scripts": {
+    "build": "vsce package",
     "vscode:prepublish": "tsc -p .",
     "compile": "tsc -p .",
     "watch": "tsc -watch -p ."
